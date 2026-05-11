@@ -124,21 +124,22 @@ export default {
         "A#4",
         "B4", //11
       ],
-      notesInScaleIndexes: [2, 1, 4, 6, 7, 9, 11],
+      notesInScaleIndexes: [0, 2, 4, 5, 7, 9, 11],
       transitionMatrix: [
-        [0, 0.14, 0.16, 0, 0.14, 0, 0.14, 0.14, 0, 0.14, 0, 0.14],
-        [0, 0.14, 0.16, 0, 0.14, 0, 0.14, 0.14, 0, 0.14, 0, 0.14],
-        [0, 0.14, 0.16, 0, 0.14, 0, 0.14, 0.14, 0, 0.14, 0, 0.14],
-        [0, 0.14, 0.16, 0, 0.14, 0, 0.14, 0.14, 0, 0.14, 0, 0.14],
-        [0, 0.14, 0.16, 0, 0.14, 0, 0.14, 0.14, 0, 0.14, 0, 0.14],
-        [0, 0.14, 0.16, 0, 0.14, 0, 0.14, 0.14, 0, 0.14, 0, 0.14],
-        [0, 0.14, 0.16, 0, 0.14, 0, 0.14, 0.14, 0, 0.14, 0, 0.14],
-        [0, 0.14, 0.16, 0, 0.14, 0, 0.14, 0.14, 0, 0.14, 0, 0.14],
-        [0, 0.14, 0.16, 0, 0.14, 0, 0.14, 0.14, 0, 0.14, 0, 0.14],
-        [0, 0.14, 0.16, 0, 0.14, 0, 0.14, 0.14, 0, 0.14, 0, 0.14],
-        [0, 0.14, 0.16, 0, 0.14, 0, 0.14, 0.14, 0, 0.14, 0, 0.14],
-        [0, 0.14, 0.16, 0, 0.14, 0, 0.14, 0.14, 0, 0.14, 0, 0.14],
-      ],
+//  C    C#   D    D#   E    F    F#   G    G#   A    A#   B
+  [ 0,   0,  0.1,  0,  0.2,  0.3, 0,  0.2,  0,  0.2,  0,  0  ], // C  → E, F, G, A (dominante)
+  [ 0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,  0  ], // C# unused
+  [ 0,   0,   0,   0,  0.3,  0.2, 0,  0.1,  0,  0.3,  0,  0.1], // D  → E, F, G, A, B
+  [ 0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,  0  ], // D# unused
+  [ 0,   0,  0.1,  0,   0,   0.4, 0,  0.2,  0,  0.3,  0,  0  ], // E  → F fuerte (frigio), G, A
+  [ 0,   0,  0.1,  0,  0.2,  0,   0,  0.3,  0,  0.3,  0,  0.1], // F  → E, G, A, B
+  [ 0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,  0  ], // F# unused
+  [ 0,   0,  0.2,  0,  0.1,  0.2, 0,   0,   0,  0.4,  0,  0.1], // G  → A fuerte (resuelve), D, F
+  [ 0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,  0  ], // G# unused
+  [ 0,   0,  0.1,  0,  0.2,  0.3, 0,  0.3,  0,   0,   0,  0.1], // A  → E, F, G (movimiento oscuro)
+  [ 0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,  0  ], // A# unused
+  [ 0,   0,  0.1,  0,  0.2,  0.2, 0,  0.2,  0,  0.3,  0,  0  ], // B  → A, G, F, E
+],
       melodySynth: new Tone.Synth().toDestination(),
       playing: false,
       loop: null,
@@ -188,6 +189,19 @@ export default {
       rand -= 0.16;
       return rand <= 0 ? 0 : 1 + Math.floor(rand / 0.14);
     },
+    getNextNoteIndex() {
+      const row = this.transitionMatrix[this.currIndex];
+      const rand = Math.random();
+      let cumulative = 0;
+      for (let i = 0; i < row.length; i++) {
+        cumulative += row[i];
+        if (rand < cumulative) {
+          return i;
+        }
+      }
+      // fallback: devuelve la tónica
+      return this.notesInScaleIndexes[0];
+    },
     getCellColor(i, j) {
       if (i == this.prevIndex && j == this.currIndex) {
         return "primary";
@@ -209,7 +223,7 @@ export default {
         this.attack();
         this.prevIndex = this.currIndex;
         this.currIndex = this.nextIndex;
-        this.nextIndex = this.notesInScaleIndexes[this.getNextnextIndex()];
+        this.nextIndex = this.getNextNoteIndex();
       }
     });
     window.addEventListener("keyup", (e) => {
