@@ -110,66 +110,68 @@ export default {
   name: "Main",
   data() {
     return {
-      notes: [
-        "C4",
-        "C#4", //1
-        "D4", //2
-        "D#4",
-        "E4", //4
-        "F4",
-        "F#4", //6
-        "G4", //7
-        "G#4",
-        "A4", //9
-        "A#4",
-        "B4", //11
-      ],
+     notes: [
+      "C3", "C#3", "D3", "D#3", "E3",
+      "F3", "F#3", "G3", "G#3", "A3",
+      "A#3", "B3",
+    ],
+      autoPlayInterval: null,
       notesInScaleIndexes: [0, 2, 4, 5, 7, 9, 11],
       transitionMatrix: [
 //  C    C#   D    D#   E    F    F#   G    G#   A    A#   B
-  [ 0,   0,  0.1,  0,  0.2,  0.3, 0,  0.2,  0,  0.2,  0,  0  ], // C  → E, F, G, A (dominante)
-  [ 0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,  0  ], // C# unused
-  [ 0,   0,   0,   0,  0.3,  0.2, 0,  0.1,  0,  0.3,  0,  0.1], // D  → E, F, G, A, B
-  [ 0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,  0  ], // D# unused
-  [ 0,   0,  0.1,  0,   0,   0.4, 0,  0.2,  0,  0.3,  0,  0  ], // E  → F fuerte (frigio), G, A
-  [ 0,   0,  0.1,  0,  0.2,  0,   0,  0.3,  0,  0.3,  0,  0.1], // F  → E, G, A, B
-  [ 0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,  0  ], // F# unused
-  [ 0,   0,  0.2,  0,  0.1,  0.2, 0,   0,   0,  0.4,  0,  0.1], // G  → A fuerte (resuelve), D, F
-  [ 0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,  0  ], // G# unused
-  [ 0,   0,  0.1,  0,  0.2,  0.3, 0,  0.3,  0,   0,   0,  0.1], // A  → E, F, G (movimiento oscuro)
-  [ 0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,  0  ], // A# unused
-  [ 0,   0,  0.1,  0,  0.2,  0.2, 0,  0.2,  0,  0.3,  0,  0  ], // B  → A, G, F, E
+  [ 0,   0,  0.1,  0,  0.3,  0.3, 0,  0.2,  0,  0.1,  0,  0  ], // C
+  [ 0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,  0  ], // C#
+  [ 0,   0,   0,   0,  0.4,  0.3, 0,  0.1,  0,  0.2,  0,  0  ], // D
+  [ 0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,  0  ], // D#
+  [ 0,   0,  0.1,  0,   0,   0.5, 0,  0.1,  0,  0.3,  0,  0  ], // E → F FUERTE
+  [ 0,   0,  0.1,  0,  0.3,  0,   0,  0.3,  0,  0.2,  0,  0.1], // F
+  [ 0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,  0  ], // F#
+  [ 0,   0,  0.1,  0,  0.2,  0.2, 0,   0,   0,  0.4,  0,  0.1], // G
+  [ 0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,  0  ], // G#
+  [ 0,   0,  0.1,  0,  0.3,  0.3, 0,  0.2,  0,   0,   0,  0.1], // A
+  [ 0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,  0  ], // A#
+  [ 0,   0,  0.2,  0,  0.2,  0.1, 0,  0.2,  0,  0.3,  0,  0  ], // B
 ],
-      melodySynth: new Tone.Synth().toDestination(),
+melodySynth: new Tone.Synth({
+        oscillator: { type: "sawtooth" },
+        envelope: {
+          attack: 0.01,
+          decay: 0.1,
+          sustain: 0.5,
+          release: 0.3,
+        },
+      }).toDestination(),
       playing: false,
       loop: null,
       pressed: false,
-      prevIndex: 2,
-      currIndex: 2,
-      nextIndex: 2,
-      currNote: "D4",
+      prevIndex: 9,  // A3 es la tónica ahora
+      currIndex: 9,
+      nextIndex: 9,
+      currNote: "A3",
     };
   },
   methods: {
     async changeState() {
       if (!this.playing) {
         await Tone.start();
-        Tone.Transport.bpm.value = 141;
+        Tone.Transport.bpm.value = 95;
         this.chords();
         Tone.Transport.start();
+        this.startAutoPlay(); 
       } else {
         Tone.Transport.stop();
         this.loop.dispose();
+        this.stopAutoPlay();
       }
       this.playing = !this.playing;
     },
     chords() {
       let chordNum = 0;
       const chords = [
-        ["B3", "D3", "F#3"], // Bm (vi)
-        ["G3", "B3", "D3"], // G (iv)
-        ["D3", "F#3", "A3"], // D (i)
-        ["A3", "C#3", "E3"], // A (v)
+      ["A2", "E3", "G3"],   // Am  — bajo y oscuro
+      ["F2", "C3", "F3"],   // F   — grave
+      ["G2", "D3", "G3"],   // G   — tensión
+      ["E2", "B2", "E3"],   // Em  — resuelve oscuro
       ];
       const synth = new Tone.PolySynth().toDestination();
       synth.volume.value = -6;
@@ -202,6 +204,26 @@ export default {
       // fallback: devuelve la tónica
       return this.notesInScaleIndexes[0];
     },
+    startAutoPlay() {
+  const noteDurations = [200, 200, 400, 200]; // patrón rítmico irregular
+  let beat = 0;
+  this.autoPlayInterval = setInterval(() => {
+    this.currNote = this.notes[this.nextIndex];
+    this.attack();
+    this.prevIndex = this.currIndex;
+    this.currIndex = this.nextIndex;
+    this.nextIndex = this.getNextNoteIndex();
+
+    const dur = noteDurations[beat % noteDurations.length];
+    beat++;
+    setTimeout(() => this.release(), dur - 50);
+  }, 250); // negra a ~95 BPM con subdivisión
+},
+stopAutoPlay() {
+  clearInterval(this.autoPlayInterval);
+  this.autoPlayInterval = null;
+  this.release();
+},
     getCellColor(i, j) {
       if (i == this.prevIndex && j == this.currIndex) {
         return "primary";
